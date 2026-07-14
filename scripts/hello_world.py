@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from anthropic import Anthropic
-from openai import OpenAI
+from openai import OpenAI, Stream
 
 load_dotenv()
 
@@ -27,9 +27,20 @@ def call_openai():
         messages=[
             {"role": "user", "content": "Say hello in one sentence."}
         ],
+        stream=True,
+        stream_options={
+            "include_usage": True,
+            "include_obfuscation": False
+        }
     )
-    
-    print("OpenAI says:", response.choices[0].message.content)
-    print("Tokens used:", response.usage)
-    
+    for event in response:
+        if event.choices:
+            word = (event.choices[0].delta.content)
+            if word :
+                print(word, end="", flush= True)
+        usage = (event.usage)
+        if usage:
+            print(f"\nToken usage: {usage.total_tokens} tokens", flush=True)
+
+  
 call_openai()
