@@ -12,7 +12,7 @@ def get_weather(city: str) -> str:
     print("inside the function")
     return f"In {city}, the weather is sunny."
 
-FUNC_TOOLS = [
+TOOLS_OPENAI = [
     {
         "function": {
             "name": "get_weather",
@@ -27,19 +27,63 @@ FUNC_TOOLS = [
     }
 ]
 
+TOOLS_ANTHROPIC = [
+    {
+        "input_schema": {
+            "type":"object",
+            "properties":{"city": {"type": "string"}},
+            "required": ["city"]
+            },
+        "name": "get_weather",
+        "description": "Function to get the weather of a city",
+    }
+]
+
 TOOL_MAP = {"get_weather": get_weather}
 
 
-def call_anthropic_api():
+def call_anthropic():
     client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-
+    Messages = [{"role": "user", "content": "Whats the weather in san francisco?"}]
     response = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=100,
-        messages=[{"role": "user", "content": "Say hello in one sentence."}],
+        messages=Messages,
+        tools=TOOLS_ANTHROPIC
     )
-
-    print("Claude says:", response.content[0].text)
+    if response.stop_reason == "tool_use":
+        func_to_call = TOOL_MAP.get(response.content[0].name)
+        args = response.content[0].input
+        res=func_to_call(**args)
+        Messages.append({
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "tool_use",
+                    "id": response.content[0].id,
+                    "name": response.content[0].name,
+                    "input": response.content[0].input
+                }
+            ]
+        })
+        Messages.append({
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": response.content[0].id,
+                    "content": res
+                }
+            ]
+        })
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=100,
+            messages=Messages
+        )
+        print(response.content[0].text)
+    else :
+        print(response.content[0].text)    
 
 
 def call_openai():
@@ -50,7 +94,7 @@ def call_openai():
         model="gpt-4o-mini",
         messages=messages,
         stream=False,
-        tools=FUNC_TOOLS,
+        tools=TOOLS_OPENAI,
     )
 
     tool_calls = response.choices[0].message.tool_calls
@@ -86,4 +130,5 @@ def call_openai():
 
 
 if __name__ == "__main__":
-    call_openai()
+    # call_openai()
+    call_anthropic()
