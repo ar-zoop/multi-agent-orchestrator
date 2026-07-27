@@ -5,3 +5,5 @@ class ChatResponse(BaseModel):
     provider: str
     input_tokens: int
     output_tokens: int
+    stop_reason: str
+    tool_calls: list[dict] | None = None

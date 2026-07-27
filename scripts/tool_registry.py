@@ -8,3 +8,6 @@ class ToolRegistry:
         
     def get(self, name):
         return self._tools[name]
+
+    def all(self):
+        return list(self._tools.values())
