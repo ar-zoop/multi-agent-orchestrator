@@ -1,3 +1,5 @@
+import itertools
+
 import pytest
 
 from provider import Provider
@@ -30,21 +32,15 @@ def make_response(provider_name: str) -> ChatResponse:
 
 
 class FakeProvider(Provider):
-    """A Provider whose complete() plays back a scripted sequence of
-    outcomes - either an exception to raise, or a value to return - one
-    per call. Once the script runs out, it keeps repeating the last
-    outcome, so tests don't have to script every call precisely."""
-
     def __init__(self, name: str, outcomes: list):
         self.name = name
-        self._outcomes = list(outcomes)
-        self._last_outcome = outcomes[-1] if outcomes else None
         self.call_count = 0
+        last = outcomes[-1] if outcomes else None
+        self._outcomes = itertools.chain(outcomes, itertools.repeat(last))
 
     def complete(self, request):
         self.call_count += 1
-        outcome = self._outcomes.pop(0) if self._outcomes else self._last_outcome
-        self._last_outcome = outcome
+        outcome = next(self._outcomes)
         if isinstance(outcome, Exception):
             raise outcome
         return outcome
@@ -92,7 +88,7 @@ def test_returns_first_provider_response_when_it_succeeds():
 
     assert response.provider == "openai"
     assert openai.call_count == 1
-    assert anthropic.call_count == 0  # never touched - openai worked first try
+    assert anthropic.call_count == 0
 
 
 def test_non_retryable_error_falls_back_without_retrying_same_provider():
@@ -109,7 +105,7 @@ def test_non_retryable_error_falls_back_without_retrying_same_provider():
     response = fallback.complete(request=None)
 
     assert response.provider == "anthropic"
-    assert openai.call_count == 1  # broke immediately, no retries burned
+    assert openai.call_count == 1
     assert anthropic.call_count == 1
 
 
@@ -150,7 +146,6 @@ def test_retryable_error_that_recovers_mid_retry_succeeds_on_same_provider():
 
 
 def test_circuit_breaker_opens_after_repeated_failed_requests():
-    # openai always fails non-retryably; every complete() call records one failure
     openai = FakeProvider("openai", [FakeAPIError(401)])
     anthropic = FakeProvider("anthropic", [make_response("anthropic")])
 
@@ -162,16 +157,14 @@ def test_circuit_breaker_opens_after_repeated_failed_requests():
         base_delay=0,
     )
 
-    # three separate requests, each giving up on openai once
     fallback.complete(request=None)
     fallback.complete(request=None)
     fallback.complete(request=None)
     assert openai.call_count == 3
     assert breaker.is_open("openai") is True
 
-    # fourth request: breaker should skip openai entirely now
     fallback.complete(request=None)
-    assert openai.call_count == 3  # unchanged - never called this time
+    assert openai.call_count == 3
     assert anthropic.call_count == 4
 
 
