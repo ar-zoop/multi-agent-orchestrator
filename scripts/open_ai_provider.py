@@ -42,6 +42,7 @@ def _to_openai_tools(tools):
 
 
 class OpenAIProvider(Provider):
+    name = "openai"
     def complete(self, request):
         client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 

@@ -5,7 +5,6 @@ import os
 
 
 def _to_anthropic_messages(messages):
-    # Anthropic wants system prompts pulled out separately, not in the messages list
     system_parts = [m.content for m in messages if m.role == "system"]
     system = " ".join(system_parts) if system_parts else None
 
@@ -15,7 +14,6 @@ def _to_anthropic_messages(messages):
             continue
 
         if m.role == "assistant" and m.tool_calls:
-            # assistant tool-call turns need tool_use blocks nested in content
             content = []
             if m.content:
                 content.append({"type": "text", "text": m.content})
@@ -60,6 +58,7 @@ def _to_anthropic_tools(tools):
 
 
 class AnthropicProvider(Provider):
+    name = "anthropic"
     def complete(self, request):
         client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
@@ -89,7 +88,6 @@ class AnthropicProvider(Provider):
         text_blocks = [b.text for b in response.content if b.type == "text"]
         content = text_blocks[0] if text_blocks else ""
 
-        # normalize Anthropic's "tool_use"/"end_turn"/etc into a consistent stop_reason
         stop_reason = "tool_call" if tool_calls else "final"
 
         chatResponse = ChatResponse(

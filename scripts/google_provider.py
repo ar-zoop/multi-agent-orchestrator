@@ -54,6 +54,7 @@ def _to_google_tools(tools):
 
 
 class GoogleProvider(Provider):
+    name = "google"
     def complete(self, request):
         client = genai.Client()
         system_messages = [m.content for m in request.messages if m.role == "system"]

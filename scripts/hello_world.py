@@ -96,13 +96,13 @@ create_weather_tool = Tool(name = "get_weather", description = "Function to get 
 # 	result = func_to_call(**arguments)
 
 # 	messages.append(response.choices[0].message)
-	# messages.append(
-	# 	{
-	# 		"role": "tool",
-	# 		"tool_call_id": tool_call.id,
-	# 		"content": result,
-	# 	}
-	# )
+# 	messages.append(
+# 		{
+# 			"role": "tool",
+# 			"tool_call_id": tool_call.id,
+# 			"content": result,
+# 		}
+# 	)
 
 # 	followup = client.chat.completions.create(
 # 		model="gpt-4o-mini",
