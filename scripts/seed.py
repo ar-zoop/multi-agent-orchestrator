@@ -1,17 +1,43 @@
+import os
 import random
 from datetime import date
-from dateutil.relativedelta import relativedelta
+
 import psycopg2
+from dateutil.relativedelta import relativedelta
 from faker import Faker
 
 fake = Faker()
 borrower_ids = []
 loan_ids = []
-loans = []  # metadata per loan, needed later for Payment/Ledger
+loans = []  # metadata per loan, needed for Payment/Ledger
 
-with psycopg2.connect(host="localhost", port=5432, user="admin", password="password", dbname="loan_bank_db") as conn:
+
+def connect_to_db():
+    host_candidates = [os.getenv("POSTGRES_HOST"), "host.docker.internal", "127.0.0.1", "localhost"]
+    seen = set()
+    last_error = None
+
+    for host in host_candidates:
+        if not host or host in seen:
+            continue
+        seen.add(host)
+        try:
+            return psycopg2.connect(
+                host=host,
+                port=int(os.getenv("POSTGRES_PORT", "55432")),
+                user=os.getenv("POSTGRES_USER", "admin"),
+                password=os.getenv("POSTGRES_PASSWORD", "password"),
+                dbname=os.getenv("POSTGRES_DB", "loan_bank_db"),
+                connect_timeout=5,
+            )
+        except psycopg2.OperationalError as exc:
+            last_error = exc
+
+    raise last_error
+
+
+with connect_to_db() as conn:
     with conn.cursor() as cur:
-        # --- Borrower ---
         for _ in range(25):
             cur.execute(
                 """
@@ -22,15 +48,13 @@ with psycopg2.connect(host="localhost", port=5432, user="admin", password="passw
                 (
                     fake.first_name(),
                     fake.last_name(),
-                    fake.phone_number(),
+                    fake.phone_number()[:20],
                     fake.unique.email(),
                     fake.random_int(min=550, max=820),
                     fake.random_int(min=35000, max=250000),
                 ),
             )
             borrower_ids.append(cur.fetchone()[0])
-
-        # --- Loan ---
         for borrower_id in borrower_ids:
             for _ in range(random.randint(1, 2)):
                 origination_date = fake.date_between(start_date="-3y", end_date="today")
