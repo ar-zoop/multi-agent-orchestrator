@@ -1,6 +1,6 @@
 from openai import OpenAI
 from dotenv import load_dotenv
-from review_comment import ReviewComment
+from orchestrator.core.review_comment import ReviewComment
 import os
 import json
 

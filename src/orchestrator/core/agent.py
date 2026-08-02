@@ -1,7 +1,7 @@
-from provider import Provider
-from tool_registry import ToolRegistry
-from chat_request import ChatRequest
-from chat_message import Message
+from orchestrator.providers.base import Provider
+from orchestrator.core.tool_registry import ToolRegistry
+from orchestrator.core.chat_request import ChatRequest
+from orchestrator.core.chat_message import Message
 
 class Agent:
     

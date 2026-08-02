@@ -1,6 +1,6 @@
-from provider import Provider
+from orchestrator.providers.base import Provider
 from google import genai
-from chat_response import ChatResponse
+from orchestrator.core.chat_response import ChatResponse
 
 
 def _to_google_history(messages):
@@ -90,3 +90,23 @@ class GoogleProvider(Provider):
             tool_calls=tool_calls,
         )
         return chatResponse
+    
+    def stream(self, request):
+        # tool calling not supported in streaming mode
+        client = genai.Client()
+        system_messages = [m.content for m in request.messages if m.role == "system"]
+        system_instruction = " ".join(system_messages) if system_messages else None
+
+        history = _to_google_history(request.messages)
+
+        kwargs = dict(
+            model=request.model,
+            system_instruction=system_instruction,
+            input=history,
+            stream=True,
+        )
+
+        stream = client.interactions.create(**kwargs)
+        for event in stream:
+            if event.event_type == "step.delta" and event.delta.type == "text":
+                yield event.delta.text

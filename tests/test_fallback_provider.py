@@ -2,10 +2,10 @@ import itertools
 
 import pytest
 
-from provider import Provider
-from circuit_breaker import CircuitBreaker
-from fallback_provider import FallbackProvider, is_retryable
-from chat_response import ChatResponse
+from orchestrator.providers.base import Provider
+from orchestrator.core.circuit_breaker import CircuitBreaker
+from orchestrator.providers.fallback_provider import FallbackProvider, is_retryable
+from orchestrator.core.chat_response import ChatResponse
 
 
 class FakeAPIError(Exception):
@@ -44,6 +44,11 @@ class FakeProvider(Provider):
         if isinstance(outcome, Exception):
             raise outcome
         return outcome
+
+    def stream(self, request):
+        # Not exercised by these tests - only present so FakeProvider can be
+        # instantiated now that Provider declares stream() as abstract.
+        raise NotImplementedError
 
 
 def make_breaker(failure_threshold=3, cooldown_seconds=30.0):

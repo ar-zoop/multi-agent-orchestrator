@@ -1,9 +1,9 @@
 import json
 import os
 
-from provider import Provider
+from orchestrator.providers.base import Provider
 from openai import OpenAI
-from chat_response import ChatResponse
+from orchestrator.core.chat_response import ChatResponse
 
 
 def _to_openai_message(m):
@@ -77,3 +77,19 @@ class OpenAIProvider(Provider):
             stop_reason=stop_reason,
             tool_calls=tool_calls)
         return chatResponse
+
+
+    def stream(self, request):
+        # tool calling not supported in streaming mode
+        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        kwargs = dict(
+            model=request.model,
+            messages=[_to_openai_message(s) for s in request.messages],
+            temperature=request.temperature,
+            stream = True
+        )
+        response = client.chat.completions.create(**kwargs)
+    
+        for chunk in response:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content

@@ -1,5 +1,5 @@
 import time
-from provider import Provider
+from orchestrator.providers.base import Provider
 
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
@@ -45,4 +45,34 @@ class FallbackProvider(Provider):
                 self.circuit_breaker.record_failure(provider.name)
                 continue        
         
+        raise RuntimeError(f"All providers exhausted. Last error: {last_error}")
+    
+    def stream(self, request):
+        last_error = None
+        for provider in self.providers:
+            if self.circuit_breaker.is_open(provider.name):
+                continue
+
+            for attempt in range(self.max_retries_per_provider):
+                try:
+                    gen = provider.stream(request)
+                    first_chunk = next(gen)          
+                except StopIteration:
+                    self.circuit_breaker.record_success(provider.name)
+                    return                            
+                except Exception as e:
+                    last_error = e
+                    if not is_retryable(e):
+                        self.circuit_breaker.record_failure(provider.name)
+                        break
+                    time.sleep(self.base_delay * (2 ** attempt))
+                else:
+                    self.circuit_breaker.record_success(provider.name)
+                    yield first_chunk
+                    yield from gen                  
+                    return
+            else:
+                self.circuit_breaker.record_failure(provider.name)
+                continue
+
         raise RuntimeError(f"All providers exhausted. Last error: {last_error}")

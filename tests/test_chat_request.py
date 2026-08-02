@@ -1,5 +1,5 @@
 import pytest
-from chat_request import ChatRequest
+from orchestrator.core.chat_request import ChatRequest
 from pydantic import ValidationError
 
 def test_chat_request_requires_all_fields():

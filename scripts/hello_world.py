@@ -6,12 +6,12 @@ from anthropic import Anthropic
 from google import genai
 from openai import OpenAI
 
-from anthropic_provider import AnthropicProvider
-from chat_request import ChatRequest
-from google_provider import GoogleProvider
-from open_ai_provider import OpenAIProvider
-from tool import Tool
-from tool_registry import ToolRegistry
+from orchestrator.providers.anthropic_provider import AnthropicProvider
+from orchestrator.core.chat_request import ChatRequest
+from orchestrator.providers.google_provider import GoogleProvider
+from orchestrator.providers.openai_provider import OpenAIProvider
+from orchestrator.core.tool import Tool
+from orchestrator.core.tool_registry import ToolRegistry
 
 load_dotenv()
 

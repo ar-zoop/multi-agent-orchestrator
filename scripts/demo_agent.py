@@ -1,9 +1,9 @@
 from dotenv import load_dotenv
 
-from agent import Agent
-from open_ai_provider import OpenAIProvider
-from tool import Tool
-from tool_registry import ToolRegistry
+from orchestrator.core.agent import Agent
+from orchestrator.providers.openai_provider import OpenAIProvider
+from orchestrator.core.tool import Tool
+from orchestrator.core.tool_registry import ToolRegistry
 
 load_dotenv()
 

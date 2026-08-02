@@ -5,3 +5,7 @@ class Provider(ABC):
     @abstractmethod
     def complete(self, request):
         pass
+    
+    @abstractmethod
+    def stream(self, request):
+        pass

@@ -1,8 +1,8 @@
 import time
 import logging
 
-from provider import Provider
-from usage_stats import UsageStats
+from orchestrator.providers.base import Provider
+from orchestrator.core.usage_stats import UsageStats
 
 logger = logging.getLogger(__name__)
 
@@ -45,3 +45,15 @@ class CostTrackingProvider(Provider):
 
         logger.info("Provider: %s, Model: %s, Input Tokens: %d, Output Tokens: %d, Latency: %.2f seconds, Cost: $%.6f", response.provider, request.model, response.input_tokens, response.output_tokens, latency, cost)
         return response
+
+    def stream(self, request):
+        # NOTE: streaming chunks are plain text deltas with no per-chunk usage
+        # data, so we can't compute cost here the way complete() does. Only
+        # latency is tracked for now - revisit if the provider stream shape
+        # ever exposes a final usage event we can hook into.
+        start = time.monotonic()
+        try:
+            yield from self.provider.stream(request)
+        finally:
+            latency = time.monotonic() - start
+            logger.info("Provider: %s, Model: %s, Latency: %.2f seconds (streaming - cost not tracked)", self.provider.name, request.model, latency)

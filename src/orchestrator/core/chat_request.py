@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from chat_message import Message
+from orchestrator.core.chat_message import Message
 
 class ChatRequest(BaseModel):
     messages: list[Message]
