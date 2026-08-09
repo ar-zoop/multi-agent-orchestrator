@@ -9,7 +9,7 @@ from faker import Faker
 fake = Faker()
 borrower_ids = []
 loan_ids = []
-loans = []  # metadata per loan, needed for Payment/Ledger
+loans = []
 
 
 def connect_to_db():
@@ -93,7 +93,6 @@ with connect_to_db() as conn:
                     }
                 )
 
-        # --- Payment + Ledger ---
         payment_count = 0
         ledger_count = 0
 
@@ -102,7 +101,6 @@ with connect_to_db() as conn:
             monthly_interest_rate = loan["interest_rate"] / 100 / 12
             balance = loan["loan_amount"]
 
-            # Disbursement: the loan's starting ledger entry
             cur.execute(
                 """
                 INSERT INTO Ledger (loan_id, transaction_type, amount, balance_after, transaction_date)
@@ -112,7 +110,6 @@ with connect_to_db() as conn:
             )
             ledger_count += 1
 
-            # Step monthly from origination_date to today, capped at term_months
             months_elapsed = min(
                 (date.today().year - loan["origination_date"].year) * 12
                 + (date.today().month - loan["origination_date"].month),

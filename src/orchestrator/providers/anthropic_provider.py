@@ -99,24 +99,21 @@ class AnthropicProvider(Provider):
             stop_reason=stop_reason)
 
         return chatResponse
-    
+
     def stream(self, request):
-        # tool calling not supported in streaming mode
         client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-        system, anthropic_messages = _to_anthropic_messages(request.messages)   
+        system, anthropic_messages = _to_anthropic_messages(request.messages)
         kwargs = dict(
-                    model=request.model,
-                    max_tokens=1024,
-                    messages=anthropic_messages,
-                    temperature=request.temperature,
-                )
+            model=request.model,
+            max_tokens=1024,
+            messages=anthropic_messages,
+            temperature=request.temperature,
+        )
         if system:
             kwargs["system"] = system
-        
+
         response = client.messages.stream(**kwargs)
         with response as stream:
             for chunk in stream:
-                if chunk.type=="content_block_delta":
+                if chunk.type == "content_block_delta" and chunk.delta.type == "text_delta":
                     yield chunk.delta.text
-                
-                  

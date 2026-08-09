@@ -1,9 +1,10 @@
 from dotenv import load_dotenv
 
 from orchestrator.core.agent import Agent
-from orchestrator.providers.openai_provider import OpenAIProvider
 from orchestrator.core.tool import Tool
 from orchestrator.core.tool_registry import ToolRegistry
+from orchestrator.providers.anthropic_provider import AnthropicProvider
+from orchestrator.providers.openai_provider import OpenAIProvider
 
 load_dotenv()
 
@@ -48,22 +49,19 @@ def build_tool_registry() -> ToolRegistry:
 
 
 def main():
-    tool_registry = build_tool_registry()
-    provider = OpenAIProvider()
-
-    agent = Agent(
-        provider=provider,
+    agent = Agent.with_fallback(
+        providers=[OpenAIProvider(), AnthropicProvider()],
         model="gpt-4o-mini",
-        tool_registry=tool_registry,
+        tool_registry=build_tool_registry(),
         max_iterations=5,
     )
 
     prompt = "What's the weather in Paris? Use the get_weather tool to find out."
     print(f"Prompt: {prompt}\n")
+    print(f"Final answer: {agent.run(prompt)}\n")
 
-    answer = agent.run(prompt)
-
-    print(f"Final answer: {answer}")
+    for name, stats in agent.usage_by_provider.items():
+        print(f"{name}: {stats.calls} calls, ${stats.cost:.6f}")
 
 
 if __name__ == "__main__":

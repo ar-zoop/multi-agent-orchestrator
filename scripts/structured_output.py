@@ -22,7 +22,5 @@ def call_structured_output():
     print(response.choices[0].message.parsed.severity)
 
 
-    
-
 if __name__ == "__main__":
     call_structured_output()

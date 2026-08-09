@@ -1,0 +1,34 @@
+diff --git a/src/billing/invoice.py b/src/billing/invoice.py
+index 1a2b3c4..5d6e7f8 100644
+--- a/src/billing/invoice.py
++++ b/src/billing/invoice.py
+@@ -10,6 +10,14 @@ class InvoiceService:
+     def __init__(self, db):
+         self.db = db
+ 
++    def total_for_customer(self, customer_id):
++        total = 0
++        invoices = self.db.query("SELECT id FROM invoice WHERE customer_id = " + str(customer_id))
++        for invoice in invoices:
++            line_items = self.db.query("SELECT amount FROM line_item WHERE invoice_id = %s", invoice.id)
++            total += sum(item.amount for item in line_items)
++        return total
++
+     def mark_paid(self, invoice_id):
+         invoice = self.db.get(invoice_id)
+         invoice.status = "paid"
+diff --git a/src/billing/retry.py b/src/billing/retry.py
+new file mode 100644
+index 0000000..9f8e7d6
+--- /dev/null
++++ b/src/billing/retry.py
+@@ -0,0 +1,9 @@
++import time
++
++def charge_with_retry(gateway, amount):
++    for attempt in range(5):
++        try:
++            return gateway.charge(amount)
++        except Exception:
++            pass
++    return None

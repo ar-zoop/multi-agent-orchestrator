@@ -66,7 +66,6 @@ class OpenAIProvider(Provider):
         else:
             tool_calls = None
 
-        # normalize OpenAI's "tool_calls"/"stop"/etc into a consistent stop_reason
         stop_reason = "tool_call" if tool_calls else "final"
 
         chatResponse = ChatResponse(
@@ -80,16 +79,18 @@ class OpenAIProvider(Provider):
 
 
     def stream(self, request):
-        # tool calling not supported in streaming mode
         client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
         kwargs = dict(
             model=request.model,
             messages=[_to_openai_message(s) for s in request.messages],
             temperature=request.temperature,
-            stream = True
+            stream=True,
         )
         response = client.chat.completions.create(**kwargs)
-    
+
         for chunk in response:
-            if chunk.choices[0].delta.content:
-                yield chunk.choices[0].delta.content
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta
+            if delta and delta.content:
+                yield delta.content

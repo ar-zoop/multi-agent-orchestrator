@@ -19,11 +19,6 @@ def _to_google_history(messages):
                 })
 
         elif m.role == "tool":
-            # NOTE: our Message model only stores tool_call_id for tool results,
-            # not the tool name - Gemini's docs example also passes "name" here.
-            # Leaving it out is a known gap; revisit if Gemini tool-calling
-            # round-trips misbehave (this API is still marked "not yet tested"
-            # in our provider comparison notes).
             history.append({
                 "type": "function_result",
                 "call_id": m.tool_call_id,
@@ -90,9 +85,8 @@ class GoogleProvider(Provider):
             tool_calls=tool_calls,
         )
         return chatResponse
-    
+
     def stream(self, request):
-        # tool calling not supported in streaming mode
         client = genai.Client()
         system_messages = [m.content for m in request.messages if m.role == "system"]
         system_instruction = " ".join(system_messages) if system_messages else None

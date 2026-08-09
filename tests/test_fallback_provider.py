@@ -9,15 +9,12 @@ from orchestrator.core.chat_response import ChatResponse
 
 
 class FakeAPIError(Exception):
-    """Stand-in for an SDK exception that carries a status_code, like
-    openai.APIStatusError / anthropic.APIStatusError."""
     def __init__(self, status_code):
         super().__init__(f"fake error {status_code}")
         self.status_code = status_code
 
 
 class FakeConnectionError(Exception):
-    """Stand-in for a connection/timeout error - no status_code at all."""
     pass
 
 
@@ -46,18 +43,12 @@ class FakeProvider(Provider):
         return outcome
 
     def stream(self, request):
-        # Not exercised by these tests - only present so FakeProvider can be
-        # instantiated now that Provider declares stream() as abstract.
         raise NotImplementedError
 
 
 def make_breaker(failure_threshold=3, cooldown_seconds=30.0):
     return CircuitBreaker(failure_threshold=failure_threshold, cooldown_seconds=cooldown_seconds)
 
-
-# ---------------------------------------------------------------------------
-# is_retryable
-# ---------------------------------------------------------------------------
 
 def test_is_retryable_true_for_retryable_status_codes():
     assert is_retryable(FakeAPIError(429)) is True
@@ -73,10 +64,6 @@ def test_is_retryable_false_for_auth_and_bad_request():
 def test_is_retryable_true_when_status_code_missing():
     assert is_retryable(FakeConnectionError("connection reset")) is True
 
-
-# ---------------------------------------------------------------------------
-# FallbackProvider.complete()
-# ---------------------------------------------------------------------------
 
 def test_returns_first_provider_response_when_it_succeeds():
     openai = FakeProvider("openai", [make_response("openai")])
@@ -128,7 +115,7 @@ def test_retryable_error_retries_same_provider_before_falling_back():
     response = fallback.complete(request=None)
 
     assert response.provider == "anthropic"
-    assert openai.call_count == 2  # used up both retries before giving up
+    assert openai.call_count == 2
     assert anthropic.call_count == 1
 
 
@@ -147,7 +134,7 @@ def test_retryable_error_that_recovers_mid_retry_succeeds_on_same_provider():
 
     assert response.provider == "openai"
     assert openai.call_count == 2
-    assert anthropic.call_count == 0  # never needed anthropic at all
+    assert anthropic.call_count == 0
 
 
 def test_circuit_breaker_opens_after_repeated_failed_requests():
