@@ -2,9 +2,12 @@ import random
 from datetime import date
 
 from dateutil.relativedelta import relativedelta
+from dotenv import load_dotenv
 from faker import Faker
 
 from orchestrator.db.connection import connect
+
+load_dotenv()
 
 fake = Faker()
 borrower_ids = []
