@@ -48,6 +48,7 @@ def connect(read_only: bool = True, autocommit: bool = True):
 
     url = database_url()
     if url:
+        timeout_needs_statement = False
         try:
             conn = psycopg2.connect(url, connect_timeout=5, options=statement_timeout_option())
         except psycopg2.OperationalError as exc:
@@ -59,9 +60,11 @@ def connect(read_only: bool = True, autocommit: bool = True):
                 "guaranteed through a transaction pooler - prefer the unpooled connection string."
             )
             conn = psycopg2.connect(url, connect_timeout=5)
+            timeout_needs_statement = True
+        conn.set_session(readonly=read_only, autocommit=autocommit)
+        if timeout_needs_statement:
             with conn.cursor() as cur:
                 cur.execute(f"SET statement_timeout = {statement_timeout_ms()}")
-        conn.set_session(readonly=read_only, autocommit=autocommit)
         return conn
 
     last_error = None
