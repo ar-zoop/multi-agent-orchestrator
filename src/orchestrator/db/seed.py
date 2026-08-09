@@ -1,42 +1,17 @@
-import os
 import random
 from datetime import date
 
-import psycopg2
 from dateutil.relativedelta import relativedelta
 from faker import Faker
+
+from orchestrator.db.connection import connect
 
 fake = Faker()
 borrower_ids = []
 loan_ids = []
 loans = []
 
-
-def connect_to_db():
-    host_candidates = [os.getenv("POSTGRES_HOST"), "host.docker.internal", "127.0.0.1", "localhost"]
-    seen = set()
-    last_error = None
-
-    for host in host_candidates:
-        if not host or host in seen:
-            continue
-        seen.add(host)
-        try:
-            return psycopg2.connect(
-                host=host,
-                port=int(os.getenv("POSTGRES_PORT", "55432")),
-                user=os.getenv("POSTGRES_USER", "admin"),
-                password=os.getenv("POSTGRES_PASSWORD", "password"),
-                dbname=os.getenv("POSTGRES_DB", "loan_bank_db"),
-                connect_timeout=5,
-            )
-        except psycopg2.OperationalError as exc:
-            last_error = exc
-
-    raise last_error
-
-
-with connect_to_db() as conn:
+with connect(read_only=False, autocommit=False) as conn:
     with conn.cursor() as cur:
         for _ in range(25):
             cur.execute(

@@ -66,7 +66,7 @@ uv sync
 cp .env.example .env          # then fill in your API keys
 
 docker compose up -d postgres
-uv run python src/orchestrator/db/seed.py
+uv run python -m orchestrator.db.seed
 
 uv run uvicorn orchestrator.api.app:app --reload
 ```
@@ -133,20 +133,27 @@ The image is a plain Dockerfile, so anything that builds Dockerfiles works. `rai
 committed for Railway: connect the repo, set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` and
 `GEMINI_API_KEY`, and it builds from the Dockerfile and health checks `/health`.
 
-The database is deliberately not tied to the host. Point `POSTGRES_HOST`, `POSTGRES_PORT`,
-`POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` at any Postgres you like, then run the
-seed script once against it.
+The database is deliberately not tied to the host. Set `DATABASE_URL` to any Postgres
+connection string - a hosted Neon or Supabase instance, a Railway plugin, anything - and run
+the seed script once against it:
+
+```bash
+DATABASE_URL='postgresql://...' uv run python -m orchestrator.db.seed
+```
 
 The container binds `0.0.0.0` on the injected `PORT`, so it works unchanged on any platform that
 assigns a port at runtime.
 
 ## Configuration
 
+`DATABASE_URL` wins if it is set; the individual `POSTGRES_*` variables are the local fallback.
+
 | Variable                        | Default          | Purpose                       |
 | ------------------------------- | ---------------- | ----------------------------- |
 | `OPENAI_API_KEY`                | -                | OpenAI provider               |
 | `ANTHROPIC_API_KEY`             | -                | Anthropic provider            |
 | `GEMINI_API_KEY`                | -                | Gemini provider               |
+| `DATABASE_URL`                  | -                | Full Postgres connection string |
 | `POSTGRES_HOST`                 | auto-detected    | SQL agent database host       |
 | `POSTGRES_PORT`                 | `55432`          | SQL agent database port       |
 | `POSTGRES_USER`                 | `admin`          | SQL agent database user       |

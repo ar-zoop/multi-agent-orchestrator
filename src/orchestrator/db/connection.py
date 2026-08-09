@@ -5,6 +5,15 @@ FALLBACK_HOSTS = ("host.docker.internal", "127.0.0.1", "localhost")
 DEFAULT_STATEMENT_TIMEOUT_MS = 10_000
 
 
+def statement_timeout_option() -> str:
+    timeout_ms = int(os.getenv("POSTGRES_STATEMENT_TIMEOUT_MS", DEFAULT_STATEMENT_TIMEOUT_MS))
+    return f"-c statement_timeout={timeout_ms}"
+
+
+def database_url() -> str | None:
+    return os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
+
+
 def host_candidates() -> list[str]:
     hosts = [os.getenv("POSTGRES_HOST"), *FALLBACK_HOSTS]
     seen = set()
@@ -17,7 +26,6 @@ def host_candidates() -> list[str]:
 
 
 def connection_params(host: str) -> dict:
-    timeout_ms = int(os.getenv("POSTGRES_STATEMENT_TIMEOUT_MS", DEFAULT_STATEMENT_TIMEOUT_MS))
     return {
         "host": host,
         "port": int(os.getenv("POSTGRES_PORT", "55432")),
@@ -25,12 +33,18 @@ def connection_params(host: str) -> dict:
         "password": os.getenv("POSTGRES_PASSWORD", "password"),
         "dbname": os.getenv("POSTGRES_DB", "loan_bank_db"),
         "connect_timeout": 5,
-        "options": f"-c statement_timeout={timeout_ms}",
+        "options": statement_timeout_option(),
     }
 
 
-def connect(read_only: bool = True):
+def connect(read_only: bool = True, autocommit: bool = True):
     import psycopg2
+
+    url = database_url()
+    if url:
+        conn = psycopg2.connect(url, connect_timeout=5, options=statement_timeout_option())
+        conn.set_session(readonly=read_only, autocommit=autocommit)
+        return conn
 
     last_error = None
     for host in host_candidates():
@@ -39,7 +53,7 @@ def connect(read_only: bool = True):
         except psycopg2.OperationalError as exc:
             last_error = exc
             continue
-        conn.set_session(readonly=read_only, autocommit=True)
+        conn.set_session(readonly=read_only, autocommit=autocommit)
         return conn
     raise last_error
 
