@@ -173,3 +173,67 @@ def test_raises_when_every_provider_is_exhausted():
 
     with pytest.raises(RuntimeError, match="All providers exhausted"):
         fallback.complete(request=None)
+
+
+def test_exhausted_error_names_every_provider_that_failed():
+    openai = FakeProvider("openai", [FakeAPIError(401)])
+    anthropic = FakeProvider("anthropic", [FakeConnectionError("connection reset")])
+
+    fallback = FallbackProvider(
+        providers=[openai, anthropic],
+        circuit_breaker=make_breaker(),
+        max_retries_per_provider=1,
+        base_delay=0,
+    )
+
+    with pytest.raises(RuntimeError) as excinfo:
+        fallback.complete(request=None)
+
+    message = str(excinfo.value)
+    assert "openai -> FakeAPIError: fake error 401" in message
+    assert "anthropic -> FakeConnectionError: connection reset" in message
+
+
+def test_exhausted_error_reports_providers_skipped_by_the_breaker():
+    openai = FakeProvider("openai", [FakeAPIError(401)])
+    breaker = make_breaker(failure_threshold=1)
+    fallback = FallbackProvider(
+        providers=[openai],
+        circuit_breaker=breaker,
+        max_retries_per_provider=1,
+        base_delay=0,
+    )
+
+    with pytest.raises(RuntimeError):
+        fallback.complete(request=None)
+
+    with pytest.raises(RuntimeError, match="circuit breaker open, skipped: openai"):
+        fallback.complete(request=None)
+
+
+def test_a_missing_api_key_is_not_retryable():
+    from orchestrator.providers.base import MissingAPIKeyError
+
+    error = MissingAPIKeyError("openai", ("OPENAI_API_KEY",))
+
+    assert is_retryable(error) is False
+    assert "set OPENAI_API_KEY" in str(error)
+
+
+def test_a_provider_with_no_key_fails_over_immediately_without_retrying():
+    from orchestrator.providers.base import MissingAPIKeyError
+
+    openai = FakeProvider("openai", [MissingAPIKeyError("openai", ("OPENAI_API_KEY",))])
+    anthropic = FakeProvider("anthropic", [make_response("anthropic")])
+
+    fallback = FallbackProvider(
+        providers=[openai, anthropic],
+        circuit_breaker=make_breaker(),
+        max_retries_per_provider=3,
+        base_delay=0,
+    )
+
+    response = fallback.complete(request=None)
+
+    assert response.provider == "anthropic"
+    assert openai.call_count == 1

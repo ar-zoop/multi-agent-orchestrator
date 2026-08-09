@@ -1,7 +1,6 @@
 import json
-import os
 
-from orchestrator.providers.base import Provider
+from orchestrator.providers.base import Provider, require_api_key
 from openai import OpenAI
 from orchestrator.core.chat_response import ChatResponse
 
@@ -44,7 +43,7 @@ def _to_openai_tools(tools):
 class OpenAIProvider(Provider):
     name = "openai"
     def complete(self, request):
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        client = OpenAI(api_key=require_api_key("openai", "OPENAI_API_KEY"))
 
         kwargs = dict(
             model=request.model,
@@ -79,7 +78,7 @@ class OpenAIProvider(Provider):
 
 
     def stream(self, request):
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+        client = OpenAI(api_key=require_api_key("openai", "OPENAI_API_KEY"))
         kwargs = dict(
             model=request.model,
             messages=[_to_openai_message(s) for s in request.messages],

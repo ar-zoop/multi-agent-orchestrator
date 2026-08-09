@@ -1,4 +1,4 @@
-from orchestrator.providers.base import Provider
+from orchestrator.providers.base import Provider, require_api_key
 from google import genai
 from orchestrator.core.chat_response import ChatResponse
 
@@ -51,7 +51,7 @@ def _to_google_tools(tools):
 class GoogleProvider(Provider):
     name = "google"
     def complete(self, request):
-        client = genai.Client()
+        client = genai.Client(api_key=require_api_key("google", "GEMINI_API_KEY", "GOOGLE_API_KEY"))
         system_messages = [m.content for m in request.messages if m.role == "system"]
         system_instruction = " ".join(system_messages) if system_messages else None
 
@@ -87,7 +87,7 @@ class GoogleProvider(Provider):
         return chatResponse
 
     def stream(self, request):
-        client = genai.Client()
+        client = genai.Client(api_key=require_api_key("google", "GEMINI_API_KEY", "GOOGLE_API_KEY"))
         system_messages = [m.content for m in request.messages if m.role == "system"]
         system_instruction = " ".join(system_messages) if system_messages else None
 

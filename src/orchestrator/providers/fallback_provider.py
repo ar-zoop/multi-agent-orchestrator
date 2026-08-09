@@ -31,7 +31,7 @@ class FallbackProvider(Provider):
         self.base_delay = base_delay
 
     def complete(self, request):
-        last_error = None
+        errors = {}
         skipped = []
         for provider in self.providers:
             if self.circuit_breaker.is_open(provider.name):
@@ -44,7 +44,7 @@ class FallbackProvider(Provider):
                     self.circuit_breaker.record_success(provider.name)
                     return response
                 except Exception as e:
-                    last_error = e
+                    errors[provider.name] = f"{type(e).__name__}: {e}"
                     logger.warning(
                         "provider=%s attempt=%d failed: %s", provider.name, attempt + 1, e
                     )
@@ -55,10 +55,10 @@ class FallbackProvider(Provider):
             else:
                 self.circuit_breaker.record_failure(provider.name)
 
-        raise RuntimeError(self._exhausted_message(last_error, skipped))
+        raise RuntimeError(self._exhausted_message(errors, skipped))
 
     def stream(self, request):
-        last_error = None
+        errors = {}
         skipped = []
         for provider in self.providers:
             if self.circuit_breaker.is_open(provider.name):
@@ -73,7 +73,7 @@ class FallbackProvider(Provider):
                     self.circuit_breaker.record_success(provider.name)
                     return
                 except Exception as e:
-                    last_error = e
+                    errors[provider.name] = f"{type(e).__name__}: {e}"
                     logger.warning(
                         "provider=%s attempt=%d stream failed: %s", provider.name, attempt + 1, e
                     )
@@ -89,12 +89,12 @@ class FallbackProvider(Provider):
             else:
                 self.circuit_breaker.record_failure(provider.name)
 
-        raise RuntimeError(self._exhausted_message(last_error, skipped))
+        raise RuntimeError(self._exhausted_message(errors, skipped))
 
-    def _exhausted_message(self, last_error, skipped) -> str:
-        if last_error is None and skipped:
-            return (
-                "All providers exhausted. Every provider was skipped because its "
-                f"circuit breaker is open: {', '.join(skipped)}"
-            )
-        return f"All providers exhausted. Last error: {last_error}"
+    def _exhausted_message(self, errors: dict, skipped: list) -> str:
+        parts = [f"{name} -> {message}" for name, message in errors.items()]
+        if skipped:
+            parts.append(f"circuit breaker open, skipped: {', '.join(skipped)}")
+        if not parts:
+            return "All providers exhausted. No providers were configured."
+        return "All providers exhausted. " + " | ".join(parts)

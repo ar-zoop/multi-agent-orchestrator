@@ -1,7 +1,6 @@
-from orchestrator.providers.base import Provider
+from orchestrator.providers.base import Provider, require_api_key
 from anthropic import Anthropic
 from orchestrator.core.chat_response import ChatResponse
-import os
 
 
 def _to_anthropic_messages(messages):
@@ -60,7 +59,7 @@ def _to_anthropic_tools(tools):
 class AnthropicProvider(Provider):
     name = "anthropic"
     def complete(self, request):
-        client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+        client = Anthropic(api_key=require_api_key("anthropic", "ANTHROPIC_API_KEY"))
 
         system, anthropic_messages = _to_anthropic_messages(request.messages)
 
@@ -101,7 +100,7 @@ class AnthropicProvider(Provider):
         return chatResponse
 
     def stream(self, request):
-        client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+        client = Anthropic(api_key=require_api_key("anthropic", "ANTHROPIC_API_KEY"))
         system, anthropic_messages = _to_anthropic_messages(request.messages)
         kwargs = dict(
             model=request.model,
