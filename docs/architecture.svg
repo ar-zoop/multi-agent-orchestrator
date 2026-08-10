@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1130" height="980" viewBox="0 0 1130 980" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <rect width="1130" height="980" fill="#ffffff"/>
+
+  <text x="76" y="40" font-size="23" font-weight="700" fill="#0f172a">Multi-Agent Orchestrator</text>
+  <text x="76" y="63" font-size="13.5" fill="#64748b">One typed interface in front of OpenAI, Anthropic and Gemini &#8212; with retries, failover, circuit breaking and cost accounting. Two agents built on top.</text>
+  <text x="76" y="82" font-size="11.5" fill="#0d9488">Dashed teal = data path: generated SQL leaves the SQL agent, passes the safety guard, and only then reaches a read-only Postgres session.</text>
+
+  <!-- ============ API band ============ -->
+  <rect x="76" y="98" width="1000" height="92" rx="10" fill="#f8fafc" stroke="#dbe1e8"/>
+  <text x="92" y="119" font-size="11" font-weight="700" letter-spacing="0.6" fill="#7c8797">API &#8212; FASTAPI (src/orchestrator/api)</text>
+  <g font-size="12.5" fill="#0f172a" text-anchor="middle">
+    <rect x="92"  y="132" width="150" height="40" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="167" y="157">GET /health</text>
+    <rect x="254" y="132" width="150" height="40" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="329" y="157">POST /run</text>
+    <rect x="416" y="132" width="150" height="40" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="491" y="157">POST /stream</text>
+    <rect x="578" y="132" width="150" height="40" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="653" y="157">POST /agents/sql</text>
+    <rect x="740" y="132" width="150" height="40" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="815" y="157">POST /agents/review</text>
+    <rect x="902" y="132" width="150" height="40" rx="7" fill="#ffffff" stroke="#cbd5e1"/><text x="977" y="157">POST /agents/run</text>
+  </g>
+
+  <line x1="576" y1="190" x2="576" y2="211" stroke="#64748b" stroke-width="1.4"/>
+  <polygon points="570,211 582,211 576,220" fill="#64748b"/>
+
+  <!-- ============ Agent band ============ -->
+  <rect x="76" y="220" width="1000" height="158" rx="10" fill="#f8fafc" stroke="#dbe1e8"/>
+  <text x="92" y="241" font-size="11" font-weight="700" letter-spacing="0.6" fill="#7c8797">AGENTS (src/orchestrator/agents, src/orchestrator/core)</text>
+
+  <rect x="92" y="254" width="300" height="80" rx="8" fill="#eef2ff" stroke="#a5b4fc"/>
+  <text x="242" y="281" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">Agent loop</text>
+  <text x="242" y="300" font-size="11.5" fill="#475569" text-anchor="middle">tool-calling, max_iterations,</text>
+  <text x="242" y="316" font-size="11.5" fill="#475569" text-anchor="middle">tool errors fed back to the model</text>
+
+  <rect x="412" y="254" width="310" height="80" rx="8" fill="#eef2ff" stroke="#a5b4fc"/>
+  <text x="567" y="281" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">SQL Agent</text>
+  <text x="567" y="300" font-size="11.5" fill="#475569" text-anchor="middle">schema-aware NL &#8594; SQL &#8594; guard</text>
+  <text x="567" y="316" font-size="11.5" fill="#475569" text-anchor="middle">&#8594; rows &#8594; plain-English answer</text>
+
+  <rect x="742" y="254" width="310" height="80" rx="8" fill="#eef2ff" stroke="#a5b4fc"/>
+  <text x="897" y="281" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">Code Review Agent</text>
+  <text x="897" y="300" font-size="11.5" fill="#475569" text-anchor="middle">unified diff &#8594; annotated diff &#8594;</text>
+  <text x="897" y="316" font-size="11.5" fill="#475569" text-anchor="middle">forced JSON tool call &#8594; markdown</text>
+
+  <text x="92" y="365" font-size="11.5" fill="#64748b">ToolRegistry &#8212; both agents are also registered as tools, so the generic loop can call either one.</text>
+
+  <line x1="576" y1="378" x2="576" y2="399" stroke="#64748b" stroke-width="1.4"/>
+  <polygon points="570,399 582,399 576,408" fill="#64748b"/>
+  <text x="590" y="395" font-size="11.5" fill="#64748b">ChatRequest / ChatResponse &#8212; one pydantic shape for all three vendors</text>
+
+  <!-- ============ Orchestration chain ============ -->
+  <rect x="76" y="410" width="1000" height="202" rx="10" fill="#f8fafc" stroke="#dbe1e8"/>
+  <text x="92" y="431" font-size="11" font-weight="700" letter-spacing="0.6" fill="#7c8797">ORCHESTRATION CHAIN &#8212; EVERY LAYER IS ITSELF A Provider (build_provider_chain)</text>
+
+  <rect x="92" y="444" width="620" height="58" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="402" y="467" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">CostTrackingProvider</text>
+  <text x="402" y="486" font-size="11.5" fill="#475569" text-anchor="middle">tokens, latency and estimated $ per provider, per call</text>
+
+  <line x1="402" y1="502" x2="402" y2="521" stroke="#64748b" stroke-width="1.4"/>
+  <polygon points="396,521 408,521 402,530" fill="#64748b"/>
+
+  <rect x="92" y="530" width="620" height="62" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="402" y="553" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">FallbackProvider</text>
+  <text x="402" y="572" font-size="11.5" fill="#475569" text-anchor="middle">retry with exponential backoff, fail fast on 4xx, then failover to the next provider</text>
+
+  <rect x="742" y="472" width="310" height="92" rx="8" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="897" y="497" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">CircuitBreaker</text>
+  <text x="897" y="516" font-size="11.5" fill="#475569" text-anchor="middle">3 failures &#8594; open for 30s</text>
+  <text x="897" y="532" font-size="11.5" fill="#475569" text-anchor="middle">open providers are skipped, not retried</text>
+  <text x="897" y="551" font-size="11.5" fill="#475569" text-anchor="middle">shared across the whole chain</text>
+
+  <line x1="712" y1="561" x2="740" y2="530" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="4 3"/>
+
+  <line x1="402" y1="612" x2="402" y2="631" stroke="#64748b" stroke-width="1.4"/>
+  <polygon points="396,631 408,631 402,640" fill="#64748b"/>
+
+  <!-- ============ Providers ============ -->
+  <rect x="76" y="642" width="1000" height="112" rx="10" fill="#f8fafc" stroke="#dbe1e8"/>
+  <text x="92" y="663" font-size="11" font-weight="700" letter-spacing="0.6" fill="#7c8797">PROVIDERS &#8212; ONE ABC, TWO METHODS: complete() AND stream()</text>
+
+  <rect x="92" y="676" width="300" height="62" rx="8" fill="#ecfdf5" stroke="#6ee7b7"/>
+  <text x="242" y="699" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">OpenAIProvider</text>
+  <text x="242" y="718" font-size="11.5" fill="#475569" text-anchor="middle">OpenAI HTTP API</text>
+
+  <rect x="412" y="676" width="310" height="62" rx="8" fill="#ecfdf5" stroke="#6ee7b7"/>
+  <text x="567" y="699" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">AnthropicProvider</text>
+  <text x="567" y="718" font-size="11.5" fill="#475569" text-anchor="middle">Anthropic Messages API</text>
+
+  <rect x="742" y="676" width="310" height="62" rx="8" fill="#ecfdf5" stroke="#6ee7b7"/>
+  <text x="897" y="699" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">GoogleProvider</text>
+  <text x="897" y="718" font-size="11.5" fill="#475569" text-anchor="middle">Gemini API</text>
+
+  <!-- ============ Data band ============ -->
+  <rect x="76" y="784" width="1000" height="152" rx="10" fill="#f8fafc" stroke="#dbe1e8"/>
+  <text x="92" y="805" font-size="11" font-weight="700" letter-spacing="0.6" fill="#7c8797">DATA PATH &#8212; THE MODEL NEVER TOUCHES THE DATABASE DIRECTLY</text>
+
+  <rect x="92" y="818" width="460" height="102" rx="8" fill="#f5f3ff" stroke="#c4b5fd"/>
+  <text x="322" y="843" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">SQL Safety Guard (sql_safety.py)</text>
+  <text x="322" y="862" font-size="11.5" fill="#475569" text-anchor="middle">SELECT / WITH only &#183; string literals masked before</text>
+  <text x="322" y="878" font-size="11.5" fill="#475569" text-anchor="middle">keyword checks &#183; no comments, no multi-statement</text>
+  <text x="322" y="894" font-size="11.5" fill="#475569" text-anchor="middle">dangerous functions blocked &#183; LIMIT injected</text>
+
+  <line x1="552" y1="869" x2="583" y2="869" stroke="#64748b" stroke-width="1.4"/>
+  <polygon points="583,863 583,875 592,869" fill="#64748b"/>
+
+  <rect x="592" y="818" width="460" height="102" rx="8" fill="#f5f3ff" stroke="#c4b5fd"/>
+  <text x="822" y="843" font-size="13.5" font-weight="600" fill="#0f172a" text-anchor="middle">Postgres &#8212; fintech loan servicing schema</text>
+  <text x="822" y="862" font-size="11.5" fill="#475569" text-anchor="middle">borrowers &#183; loans &#183; payments &#183; general ledger</text>
+  <text x="822" y="878" font-size="11.5" fill="#475569" text-anchor="middle">read-only session, statement timeout,</text>
+  <text x="822" y="894" font-size="11.5" fill="#475569" text-anchor="middle">so the guard is a second line of defence</text>
+
+  <!-- SQL agent -> data path, routed down the left channel -->
+  <path d="M 460 334 L 460 352 L 52 352 L 52 869 L 83 869" fill="none" stroke="#0d9488" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <polygon points="83,863 83,875 92,869" fill="#0d9488"/>
+</svg>

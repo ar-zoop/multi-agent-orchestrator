@@ -1,0 +1,54 @@
+%% Editable source for the architecture diagram.
+%% GitHub renders this natively inside a ```mermaid fenced block in README.md.
+flowchart TB
+  subgraph API["API - FastAPI"]
+    R1["/run  /stream"]
+    R2["/agents/sql"]
+    R3["/agents/review"]
+    R4["/agents/run"]
+    R5["/health"]
+  end
+
+  subgraph AGENTS["Agents"]
+    LOOP["Agent loop<br/>tool-calling, max_iterations,<br/>tool errors fed back to the model"]
+    SQLA["SQL Agent<br/>schema-aware NL to SQL"]
+    REV["Code Review Agent<br/>diff to forced JSON tool call"]
+    REG["ToolRegistry<br/>both agents registered as tools"]
+  end
+
+  subgraph CHAIN["Orchestration chain - every layer is itself a Provider"]
+    COST["CostTrackingProvider<br/>tokens, latency, estimated $ per provider"]
+    FALL["FallbackProvider<br/>retry with exponential backoff,<br/>fail fast on 4xx, then next provider"]
+    CB["CircuitBreaker<br/>3 failures opens for 30s,<br/>open providers are skipped"]
+  end
+
+  subgraph PROV["Providers - one ABC: complete() and stream()"]
+    OAI["OpenAIProvider"]
+    ANT["AnthropicProvider"]
+    GEM["GoogleProvider"]
+  end
+
+  subgraph DATA["Data path - the model never touches the database"]
+    GUARD["SQL Safety Guard<br/>SELECT/WITH only, literals masked,<br/>no comments or multi-statement,<br/>LIMIT injected"]
+    PG[("Postgres<br/>borrowers, loans, payments, ledger<br/>read-only session + statement timeout")]
+  end
+
+  R1 --> LOOP
+  R2 --> SQLA
+  R3 --> REV
+  R4 --> LOOP
+  LOOP <--> REG
+  REG --- SQLA
+  REG --- REV
+
+  LOOP -- "ChatRequest / ChatResponse" --> COST
+  SQLA --> COST
+  REV --> COST
+  COST --> FALL
+  FALL <-.-> CB
+  FALL --> OAI
+  FALL --> ANT
+  FALL --> GEM
+
+  SQLA -. "generated SQL" .-> GUARD
+  GUARD --> PG
