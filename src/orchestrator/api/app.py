@@ -125,6 +125,27 @@ def _usage_payload(provider) -> dict:
     }
 
 
+@app.get("/")
+def index():
+    """A bare domain that 404s reads as broken, so the root says what is here.
+
+    Not metered: it never reaches a provider, so it costs nothing to serve.
+    """
+    return {
+        "name": "Multi-Agent Orchestrator",
+        "source": "https://github.com/ar-zoop/multi-agent-orchestrator",
+        "docs": "/docs",
+        "limits": "/limits",
+        "endpoints": {
+            "POST /run": "One completion through the provider chain",
+            "POST /stream": "The same, streamed as server-sent events",
+            "POST /agents/sql": "Question -> SQL -> rows -> plain-English answer",
+            "POST /agents/review": "Unified diff -> structured review comments",
+            "POST /agents/run": "The tool-calling agent loop with both agents registered",
+        },
+    }
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}

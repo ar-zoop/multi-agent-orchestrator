@@ -34,6 +34,15 @@ def chat_body(prompt="hello"):
     }
 
 
+def test_the_root_lists_the_endpoints_rather_than_404ing(client):
+    response = client.get("/")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["docs"] == "/docs"
+    assert "POST /agents/sql" in body["endpoints"]
+
+
 def test_health_needs_no_provider(client):
     response = client.get("/health")
 

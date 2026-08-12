@@ -1,11 +1,9 @@
 # Multi-Agent Orchestrator
 
-**Live API: https://REPLACE-ME.up.railway.app** · [health](https://REPLACE-ME.up.railway.app/health) · [interactive docs](https://REPLACE-ME.up.railway.app/docs) · [current limits](https://REPLACE-ME.up.railway.app/limits)
-
-<!-- TODO: replace REPLACE-ME above with the real Railway subdomain once the service is deployed. -->
+**Live API: https://multi-agent-orchestrator-production-5f47.up.railway.app** · [interactive docs](https://multi-agent-orchestrator-production-5f47.up.railway.app/docs) · [current limits](https://multi-agent-orchestrator-production-5f47.up.railway.app/limits) · [health](https://multi-agent-orchestrator-production-5f47.up.railway.app/health)
 
 ```bash
-curl -s https://REPLACE-ME.up.railway.app/agents/sql \
+curl -s https://multi-agent-orchestrator-production-5f47.up.railway.app/agents/sql \
   -H 'content-type: application/json' \
   -d '{"question": "How many loans are currently delinquent?"}'
 ```
@@ -86,7 +84,7 @@ can only reset a budget that was capped anyway.
 require a matching `X-API-Key` header. Leaving it unset keeps the demo open but limited.
 
 ```bash
-curl -s https://REPLACE-ME.up.railway.app/limits
+curl -s https://multi-agent-orchestrator-production-5f47.up.railway.app/limits
 {"rate_limit":{"requests":10,"window_seconds":60},"auth_required":false,
  "spend_cap":{"cap_usd":5.0,"spent_usd":0.42,"remaining_usd":4.58,"resets_in_seconds":51843}}
 ```
