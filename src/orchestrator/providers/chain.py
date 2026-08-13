@@ -1,7 +1,7 @@
 from orchestrator.core.circuit_breaker import CircuitBreaker
 from orchestrator.core.cost_tracker import CostTrackingProvider
 from orchestrator.providers.base import Provider
-from orchestrator.providers.fallback_provider import FallbackProvider
+from orchestrator.providers.routing_provider import RoutingProvider
 
 
 def build_provider_chain(
@@ -14,7 +14,7 @@ def build_provider_chain(
     providers = list(providers)
     if not providers:
         raise ValueError("build_provider_chain requires at least one provider")
-    chain = FallbackProvider(
+    chain = RoutingProvider(
         providers=providers,
         circuit_breaker=circuit_breaker or CircuitBreaker(),
         max_retries_per_provider=max_retries_per_provider,
